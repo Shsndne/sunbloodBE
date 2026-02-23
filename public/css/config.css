@@ -1,0 +1,267 @@
+/* ===== VARIABLES ===== */
+:root {
+  --primary-red: #dc2626;
+  --primary-red-light: #ef4444;
+  --primary-red-dark: #b91c1c;
+  --blue: #3b82f6;
+  --orange: #f97316;
+  --green: #10b981;
+  --sidebar-bg: #111827;
+  --sidebar-bg-gradient: linear-gradient(180deg, #1a1f2e 0%, #0f1420 100%);
+  --text-white: #ffffff;
+  --text-dark: #1e293b;
+  --bg-light: #f0f2f5;
+  --shadow-sm: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 15px 30px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 35px rgba(0, 0, 0, 0.2);
+  --shadow-red: 0 8px 15px rgba(220, 38, 38, 0.3);
+  --border-radius-card: 24px;
+  --border-radius-sidebar: 12px;
+  --transition: all 0.3s ease;
+}
+
+/* ===== RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--bg-light);
+}
+
+/* ===== SIDEBAR STYLES ===== */
+.sidebar {
+  width: 260px;
+  background: var(--sidebar-bg-gradient);
+  color: var(--text-white);
+  padding: 28px 20px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  transition: var(--transition);
+  z-index: 1000;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 48px;
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+}
+
+.logo span {
+  background: var(--primary-red);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* Menu Items */
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  padding: 14px 18px;
+  border-radius: var(--border-radius-sidebar);
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Hover Effect */
+.sidebar li:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+/* Active Menu */
+.sidebar li.active {
+  background: var(--primary-red);
+  box-shadow: var(--shadow-red);
+}
+
+/* Icons */
+.sidebar li i {
+  font-size: 20px;
+  width: 24px;
+}
+
+/* Custom Scrollbar untuk Sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--primary-red);
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-red-dark);
+}
+
+/* ===== RESPONSIVE SIDEBAR ===== */
+/* Tablet: Sidebar Kecil (Icon Only) */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 80px;
+    padding: 20px 10px;
+  }
+
+  .sidebar .logo span,
+  .sidebar li span:not(.emoji) {
+    display: none;
+  }
+
+  .sidebar .logo {
+    font-size: 28px;
+    padding-left: 0;
+    justify-content: center;
+  }
+
+  .sidebar li {
+    justify-content: center;
+    padding: 15px;
+  }
+
+  .sidebar li i {
+    margin: 0;
+    font-size: 24px;
+  }
+}
+
+/* Mobile: Sidebar Tersembunyi */
+@media (max-width: 576px) {
+  .sidebar {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  /* Untuk mobile, tambahkan tombol hamburger nanti */
+  .sidebar.active {
+    width: 260px;
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* ===== SIDEBAR ANIMATIONS ===== */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sidebar {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Menu item hover animation */
+.sidebar li {
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar li::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: var(--text-white);
+  transition: width 0.3s ease;
+}
+
+.sidebar li:hover::after {
+  width: 30px;
+}
+
+.sidebar li.active::after {
+  display: none;
+}
+
+/* ===== UTILITY CLASSES ===== */
+/* Sidebar Toggle Button (untuk mobile) */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  background: var(--primary-red);
+  color: white;
+  border: none;
+  padding: 12px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: var(--shadow-red);
+  transition: var(--transition);
+}
+
+.sidebar-toggle:hover {
+  background: var(--primary-red-dark);
+  transform: scale(1.05);
+}
+
+@media (max-width: 576px) {
+  .sidebar-toggle {
+    display: block;
+  }
+}
+
+/* Overlay untuk mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+}
+
+@media (max-width: 576px) {
+  .sidebar-overlay.active {
+    display: block;
+  }
+}
+
+/* Dark Mode Support (opsional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sidebar-bg-gradient: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+  }
+}
