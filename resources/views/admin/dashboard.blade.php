@@ -25,24 +25,28 @@
 
 <div class="container">
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <h2 class="logo">🩸<span>Sunblood</span></h2>
-  <ul>
-    <li class="active">
-      <i>📊</i>
-      <span>Dashboard</span>
-    </li>
-    <li onclick="window.location.href='{{ route('stok.darah') }}'">
-      <i>🩸</i>
-      <span>Stok Darah</span>
-    </li>
-    <li onclick="window.location.href='{{ route('permintaan.darurat') }}'">
-      <i>🚨</i>
-      <span>Permintaan Darurat</span>
-    </li>
-  </ul>
-</aside>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <h2 class="logo">🩸<span>Sunblood</span></h2>
+    <ul>
+      <li onclick="window.location.href='{{ route('admin.dashboard') }}'">      
+        <span>Dashboard</span>
+      </li>
+
+      <li onclick="window.location.href='{{ route('admin.stok.darah') }}'">
+        <span>Stok Darah</span>
+      </li>
+
+      <li onclick="window.location.href='{{ route('admin.permintaan.darurat') }}'" >
+        <span>Permintaan Darurat</span>
+      </li>
+      
+      <li onclick="window.location.href='{{ route('admin.feedback') }}'" >
+        <span>Feedback</span>
+      </li>
+
+    </ul>
+  </aside>
 
   <!-- Main Content -->
   <main class="content">
@@ -51,7 +55,7 @@
     <!-- Cards dengan Loading State -->
     <div class="cards" id="dashboardCards">
       <div class="card red loading" id="card-rs">
-        <h3>🏥 Total Rumah Sakit</h3>
+        <h3> Total Rumah Sakit</h3>
         <div class="stat-value">
           <p class="card-value">-</p>
           <small>RS</small>
@@ -59,7 +63,7 @@
       </div>
 
       <div class="card blue loading" id="card-stok">
-        <h3>🩸 Total Stok Darah</h3>
+        <h3> Total Stok Darah</h3>
         <div class="stat-value">
           <p class="card-value">-</p>
           <small>Kantong</small>
@@ -67,7 +71,7 @@
       </div>
 
       <div class="card orange loading" id="card-darurat">
-        <h3>🚨 Permintaan Darurat</h3>
+        <h3> Permintaan Darurat</h3>
         <div class="stat-value">
           <p class="card-value">-</p>
           <small>aktif</small>
@@ -75,7 +79,7 @@
       </div>
 
       <div class="card green loading" id="card-terpenuhi">
-        <h3>✅ Permintaan Terpenuhi</h3>
+        <h3> Permintaan Terpenuhi</h3>
         <div class="stat-value">
           <p class="card-value">-</p>
           <small>bulan ini</small>
@@ -87,7 +91,7 @@
     <div class="chart-grid">
       <!-- Distribusi Stok -->
       <div class="chart-container">
-        <h2>📊 Distribusi Stok Darah</h2>
+        <h2> Distribusi Stok Darah</h2>
         <div class="chart-wrapper">
           <canvas id="stokChart"></canvas>
         </div>
@@ -95,7 +99,7 @@
 
       <!-- Statistik per Golongan -->
       <div class="chart-container">
-        <h2>⏱️ Stok per Golongan</h2>
+        <h2> Stok per Golongan</h2>
         <div class="chart-wrapper">
           <canvas id="golonganChart"></canvas>
         </div>
@@ -103,7 +107,7 @@
 
       <!-- Tren Permintaan per Bulan -->
       <div class="trend-container">
-        <h2>📈 Tren Permintaan per Bulan</h2>
+        <h2> Tren Permintaan per Bulan</h2>
         <div class="chart-wrapper" style="height: 250px;">
           <canvas id="trendChart"></canvas>
         </div>
@@ -199,7 +203,7 @@
     if (trendChart) trendChart.destroy();
 
     // Data distribusi stok dari Laravel
-    const distribusi = data.distribusi_stok || { A: 0, B: 0, AB: 0, O: 0 };
+    const distribusi = data.distribusi_stok || { A+: 0, A-: 0, B+: 0, B-: 0, AB+: 0, AB-: 0, O+: 0, O-: 0 };
     const total = Object.values(distribusi).reduce((a, b) => a + b, 0);
 
     // Chart Distribusi Stok (Doughnut)
@@ -207,9 +211,9 @@
     stokChart = new Chart(ctx1, {
       type: "doughnut",
       data: {
-        labels: ["Golongan A", "Golongan B", "Golongan AB", "Golongan O"],
+        labels: ["Golongan A+", "Golongan A-","Golongan B+", "Golongan B-", "Golongan AB+", "Golongan AB-", "Golongan O+", "Golongan O-"],
         datasets: [{
-          data: [distribusi.A, distribusi.B, distribusi.AB, distribusi.O],
+          data: [distribusi.A+, distribusi.A-, distribusi.B+, distribusi.B-, distribusi.AB+, distribusi.AB-, distribusi.O+, distribusi.O-],
           backgroundColor: ["#ef4444", "#3b82f6", "#f97316", "#10b981"],
           borderWidth: 0,
           borderRadius: 8,
@@ -248,7 +252,7 @@
     golonganChart = new Chart(ctx2, {
       type: "bar",
       data: {
-        labels: ["A", "B", "AB", "O"],
+        labels: ["A+", "A-","B+", "B-", "AB+", "AB-", "O+", "O-"],
         datasets: [{
           label: 'Ketersediaan (kantong)',
           data: [distribusi.A, distribusi.B, distribusi.AB, distribusi.O],

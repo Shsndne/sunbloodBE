@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rumah_sakits', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('rumah_sakits')) {
+            Schema::create('rumah_sakits', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_rumah_sakit');
+                $table->string('alamat');
+                $table->string('telepon')->nullable();
+                $table->string('foto')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

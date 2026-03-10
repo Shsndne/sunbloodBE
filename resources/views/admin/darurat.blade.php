@@ -32,25 +32,29 @@
   <aside class="sidebar" id="sidebar">
     <h2 class="logo">🩸<span>Sunblood</span></h2>
     <ul>
-      <li onclick="window.location.href='{{ route('dashboard') }}'">
-        <i>📊</i>
+      <li onclick="window.location.href='{{ route('admin.dashboard') }}'">      
         <span>Dashboard</span>
       </li>
-      <li onclick="window.location.href='{{ route('stok.darah') }}'">
-        <i>🩸</i>
+
+      <li onclick="window.location.href='{{ route('admin.stok.darah') }}'">
         <span>Stok Darah</span>
       </li>
-      <li class="active">
-        <i>🚨</i>
+
+      <li onclick="window.location.href='{{ route('admin.permintaan.darurat') }}'" >
         <span>Permintaan Darurat</span>
       </li>
+      
+      <li onclick="window.location.href='{{ route('admin.feedback') }}'" >
+        <span>Feedback</span>
+      </li>
+
     </ul>
   </aside>
 
   <!-- Main Content -->
   <main class="content">
     <h1>
-      <i>🚨</i>
+      
       Manajemen Permintaan Darurat
     </h1>
 

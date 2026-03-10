@@ -4,39 +4,83 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StokDarah extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'stok_darah';
 
     protected $fillable = [
         'nama_rs',
         'foto',
-        'stok_a',
-        'stok_b',
-        'stok_ab',
-        'stok_o'
+        'stok_a_plus',
+        'stok_a_minus',
+        'stok_b_plus',
+        'stok_b_minus',
+        'stok_ab_plus',
+        'stok_ab_minus',
+        'stok_o_plus',
+        'stok_o_minus',
     ];
 
     protected $casts = [
-        'stok_a' => 'integer',
-        'stok_b' => 'integer',
-        'stok_ab' => 'integer',
-        'stok_o' => 'integer'
+        'stok_a_plus' => 'integer',
+        'stok_a_minus' => 'integer',
+        'stok_b_plus' => 'integer',
+        'stok_b_minus' => 'integer',
+        'stok_ab_plus' => 'integer',
+        'stok_ab_minus' => 'integer',
+        'stok_o_plus' => 'integer',
+        'stok_o_minus' => 'integer',
     ];
 
     /**
-     * Get total stok
+     * Get total stok semua golongan
      */
     public function getTotalStokAttribute()
     {
-        return $this->stok_a + $this->stok_b + $this->stok_ab + $this->stok_o;
+        return $this->stok_a_plus + $this->stok_a_minus + 
+               $this->stok_b_plus + $this->stok_b_minus + 
+               $this->stok_ab_plus + $this->stok_ab_minus + 
+               $this->stok_o_plus + $this->stok_o_minus;
     }
 
     /**
-     * Get status stok
+     * Get total stok golongan A
+     */
+    public function getTotalAAttribute()
+    {
+        return $this->stok_a_plus + $this->stok_a_minus;
+    }
+
+    /**
+     * Get total stok golongan B
+     */
+    public function getTotalBAttribute()
+    {
+        return $this->stok_b_plus + $this->stok_b_minus;
+    }
+
+    /**
+     * Get total stok golongan AB
+     */
+    public function getTotalABAttribute()
+    {
+        return $this->stok_ab_plus + $this->stok_ab_minus;
+    }
+
+    /**
+     * Get total stok golongan O
+     */
+    public function getTotalOAttribute()
+    {
+        return $this->stok_o_plus + $this->stok_o_minus;
+    }
+
+    /**
+     * Get status stok berdasarkan total
      */
     public function getStatusAttribute()
     {
@@ -52,7 +96,7 @@ class StokDarah extends Model
     }
 
     /**
-     * Get status color
+     * Get status color untuk badge
      */
     public function getStatusColorAttribute()
     {
@@ -64,6 +108,33 @@ class StokDarah extends Model
             return 'warning';
         } else {
             return 'success';
+        }
+    }
+
+    /**
+     * Scope untuk filter stok kritis
+     */
+    public function scopeKritis($query)
+    {
+        return $query->whereRaw('(stok_a_plus + stok_a_minus + stok_b_plus + stok_b_minus + stok_ab_plus + stok_ab_minus + stok_o_plus + stok_o_minus) < 30');
+    }
+
+    /**
+     * Scope untuk filter berdasarkan golongan darah
+     */
+    public function scopeByGolongan($query, $golongan)
+    {
+        switch ($golongan) {
+            case 'A':
+                return $query->whereRaw('(stok_a_plus + stok_a_minus) > 0');
+            case 'B':
+                return $query->whereRaw('(stok_b_plus + stok_b_minus) > 0');
+            case 'AB':
+                return $query->whereRaw('(stok_ab_plus + stok_ab_minus) > 0');
+            case 'O':
+                return $query->whereRaw('(stok_o_plus + stok_o_minus) > 0');
+            default:
+                return $query;
         }
     }
 }

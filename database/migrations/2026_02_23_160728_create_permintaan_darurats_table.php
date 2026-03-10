@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('usia');
             $table->enum('gender', ['Laki-laki', 'Perempuan']);
             $table->text('diagnosis')->nullable();
-            $table->string('golongan_darah', 5); // A+, A-, B+, B-, AB+, AB-, O+, O-
+            $table->string('golongan_darah', 8); // A+, A-, B+, B-, AB+, AB-, O+, O-
             $table->integer('jumlah');
             $table->datetime('deadline');
             $table->enum('status', ['DARURAT', 'NORMAL', 'TERENCANA'])->default('NORMAL');
