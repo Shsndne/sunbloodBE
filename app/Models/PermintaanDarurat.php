@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PermintaanDarurat extends Model
 {
-    use HasFactory;
-
     protected $table = 'permintaan_darurats';
 
     protected $fillable = [
@@ -27,88 +25,44 @@ class PermintaanDarurat extends Model
         'kontak',
         'nama_kontak',
         'catatan',
-        'rumah_sakit_id'
+        'rumah_sakit_id',
     ];
 
     protected $casts = [
         'deadline' => 'datetime',
-        'jumlah' => 'integer',
-        'usia' => 'integer'
+        'usia'     => 'integer',
+        'jumlah'   => 'integer',
     ];
 
-    /**
-     * Relasi dengan rumah sakit
-     */
-    public function rumahSakit()
+    // Default status saat dibuat
+    protected $attributes = [
+        'status'           => 'menunggu',
+        'status_pemenuhan' => 'belum_terpenuhi',
+    ];
+
+    // Relasi ke tabel rumah_sakits (opsional jika ada)
+    public function rumahSakit(): BelongsTo
     {
         return $this->belongsTo(RumahSakit::class, 'rumah_sakit_id');
     }
 
-    /**
-     * Scope untuk filter status darurat
-     */
-    public function scopeDarurat($query)
+    // Generate kode unik otomatis
+    public static function generateKode(): string
     {
-        return $query->where('status', 'DARURAT');
+        $prefix = 'SBD-' . date('Ymd') . '-';
+        $last   = self::where('kode', 'like', $prefix . '%')->count() + 1;
+        return $prefix . str_pad($last, 4, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Scope untuk filter status pemenuhan
-     */
-    public function scopeBelumDiproses($query)
-    {
-        return $query->where('status_pemenuhan', 'belum');
-    }
-
-    /**
-     * Scope untuk filter deadline mendekati
-     */
-    public function scopeNearDeadline($query, $hours = 2)
-    {
-        return $query->where('deadline', '<=', now()->addHours($hours))
-            ->where('deadline', '>', now())
-            ->where('status_pemenuhan', '!=', 'terpenuhi');
-    }
-
-    /**
-     * Cek apakah status darurat
-     */
-    public function getIsDaruratAttribute()
-    {
-        return $this->status === 'DARURAT';
-    }
-
-    /**
-     * Cek apakah sudah terlewat deadline
-     */
-    public function getIsOverdueAttribute()
-    {
-        return $this->deadline < now() && $this->status_pemenuhan !== 'terpenuhi';
-    }
-
-    /**
-     * Mendapatkan warna status
-     */
-    public function getStatusColorAttribute()
+    // Label badge status
+    public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'DARURAT' => 'danger',
-            'NORMAL' => 'primary',
-            'TERENCANA' => 'warning',
-            default => 'secondary'
-        };
-    }
-
-    /**
-     * Mendapatkan warna status pemenuhan
-     */
-    public function getPemenuhanColorAttribute()
-    {
-        return match($this->status_pemenuhan) {
-            'belum' => 'danger',
-            'diproses' => 'warning',
-            'terpenuhi' => 'success',
-            default => 'secondary'
+            'menunggu'  => 'Menunggu',
+            'diproses'  => 'Diproses',
+            'selesai'   => 'Selesai',
+            'ditolak'   => 'Ditolak',
+            default     => ucfirst($this->status),
         };
     }
 }

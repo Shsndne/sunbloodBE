@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Validator;
 class FeedbackController extends Controller
 {
     /**
-     * Menampilkan form feedback
+     * Menampilkan halaman feedback (untuk admin)
      */
     public function index()
     {
-        return view('admin.feedback.');
+        return view('admin.feedback'); // FIX: hapus titik di akhir
     }
 
     /**
@@ -58,7 +58,6 @@ class FeedbackController extends Controller
     {
         $query = Feedback::query();
 
-        // Filter berdasarkan status
         if ($request->has('status') && $request->status != 'all') {
             $query->where('status', $request->status);
         }
@@ -122,7 +121,7 @@ class FeedbackController extends Controller
 
         try {
             $feedback = Feedback::findOrFail($id);
-            
+
             if ($request->status === 'read') {
                 $feedback->markAsRead();
             } else {
@@ -162,14 +161,6 @@ class FeedbackController extends Controller
                 'message' => 'Gagal menghapus feedback'
             ], 500);
         }
-    }
-
-    /**
-     * Menampilkan halaman admin
-     */
-    public function adminIndex()
-    {
-        return view('admin.feedback');
     }
 
     /**
