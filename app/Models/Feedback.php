@@ -1,25 +1,29 @@
 <?php
+// app/Models/Feedback.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Feedback extends Model
 {
-    protected $table = 'feedback';
+    use HasFactory;
+
+    protected $table = 'feedbacks';
 
     protected $fillable = [
-        'feedback_text',
-        'admin_response',
+        'nama',
+        'email',
+        'pesan',
+        'rating',
         'status',
+        'admin_response',
         'responded_at',
     ];
 
     protected $casts = [
+        'rating'       => 'integer',
         'responded_at' => 'datetime',
-    ];
-
-    protected $attributes = [
-        'status' => 'belum_dibalas',
     ];
 }

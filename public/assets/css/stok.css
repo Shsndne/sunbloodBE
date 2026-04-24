@@ -1,0 +1,14 @@
+/* public/css/stok.css - Stok Darah Admin specific styles */
+
+/* Tabel stok — warna cell berdasarkan kondisi */
+.table td.text-danger  { color: #dc2626 !important; font-weight: 700; }
+.table td.text-warning { color: #d97706 !important; font-weight: 600; }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

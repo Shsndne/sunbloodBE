@@ -1,301 +1,149 @@
 <?php
+// app/Http/Controllers/PermintaanDaruratController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\PermintaanDarurat;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class PermintaanDaruratController extends Controller
 {
     /**
-     * Display a listing of the resource with filters.
-     */
-    public function index(Request $request)
-    {
-        try {
-            $query = PermintaanDarurat::with('rumahSakit')
-                ->orderBy('created_at', 'desc');
-            
-            // Filter by status (DARURAT/NORMAL/TERENCANA)
-            if ($request->has('status') && !empty($request->status)) {
-                $query->where('status', $request->status);
-            }
-            
-            // Filter by pemenuhan (belum/diproses/terpenuhi)
-            if ($request->has('pemenuhan') && !empty($request->pemenuhan)) {
-                $query->where('status_pemenuhan', $request->pemenuhan);
-            }
-            
-            // Filter by golongan darah
-            if ($request->has('golongan') && !empty($request->golongan)) {
-                $query->where('golongan_darah', $request->golongan);
-            }
-            
-            // Search by nama pasien or rumah sakit
-            if ($request->has('search') && !empty($request->search)) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('nama_pasien', 'LIKE', "%{$search}%")
-                      ->orWhere('nama_rs', 'LIKE', "%{$search}%")
-                      ->orWhere('kontak', 'LIKE', "%{$search}%");
-                });
-            }
-            
-            $perPage = 10;
-            $data = $query->paginate($perPage);
-            
-            return response()->json($data);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memuat data',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get summary statistics.
-     */
-    public function getSummary()
-    {
-        try {
-            $summary = [
-                'darurat' => PermintaanDarurat::where('status', 'DARURAT')->count(),
-                'belum' => PermintaanDarurat::where('status_pemenuhan', 'belum')->count(),
-                'diproses' => PermintaanDarurat::where('status_pemenuhan', 'diproses')->count(),
-                'terpenuhi' => PermintaanDarurat::where('status_pemenuhan', 'terpenuhi')->count(),
-            ];
-            
-            return response()->json($summary);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memuat ringkasan',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * POST /api/permintaan-darurat
+     * Kirim permintaan darah darurat & dapatkan nomor resi
      */
     public function store(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'nama_pasien' => 'required|string|max:255',
-                'usia' => 'required|integer|min:0|max:150',
-                'gender' => 'required|in:Laki-laki,Perempuan',
-                'diagnosis' => 'nullable|string',
-                'golongan_darah' => 'required|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-                'jumlah' => 'required|integer|min:1|max:50',
-                'deadline' => 'required|date',
-                'status' => 'required|in:DARURAT,NORMAL,TERENCANA',
-                'nama_rs' => 'required|string|max:255',
-                'alamat_rs' => 'nullable|string',
-                'kontak' => 'required|string|max:20',
-                'nama_kontak' => 'nullable|string|max:255',
-            ]);
+        $validated = $request->validate([
+            'nama_pasien'        => 'required|string|max:255',
+            'usia_pasien'        => 'required|integer|min:0|max:150',
+            'jenis_kelamin'      => 'required|in:laki-laki,perempuan',
+            'diagnosis'          => 'required|string',
+            'golongan_darah'     => 'required|in:A,B,AB,O',
+            'rhesus'             => 'required|in:+,-',
+            'jumlah_kantong'     => 'required|integer|min:1',
+            'tanggal_dibutuhkan' => 'required|date|after_or_equal:today',
+            'tingkat_urgensi'    => 'required|in:darurat,normal,terjadwal',
+            'nama_rumah_sakit'   => 'required|string|max:255',
+            'alamat_lengkap'     => 'required|string',
+            'nama_kontak'        => 'required|string|max:255',
+            'telepon_kontak'     => 'required|string|max:20',
+            'pernyataan_setuju'  => 'required|accepted',
+        ], [
+            'pernyataan_setuju.accepted'         => 'Anda harus menyetujui pernyataan kebenaran data.',
+            'tanggal_dibutuhkan.after_or_equal'  => 'Tanggal dibutuhkan tidak boleh sebelum hari ini.',
+            'nama_pasien.required'               => 'Nama pasien wajib diisi.',
+            'usia_pasien.required'               => 'Usia pasien wajib diisi.',
+            'jenis_kelamin.required'             => 'Jenis kelamin wajib dipilih.',
+            'diagnosis.required'                 => 'Diagnosis wajib diisi.',
+            'golongan_darah.required'            => 'Golongan darah wajib dipilih.',
+            'rhesus.required'                    => 'Rhesus wajib dipilih.',
+            'jumlah_kantong.required'            => 'Jumlah kantong wajib diisi.',
+            'tanggal_dibutuhkan.required'        => 'Tanggal dibutuhkan wajib diisi.',
+            'tingkat_urgensi.required'           => 'Tingkat urgensi wajib dipilih.',
+            'nama_rumah_sakit.required'          => 'Nama rumah sakit wajib diisi.',
+            'alamat_lengkap.required'            => 'Alamat lengkap wajib diisi.',
+            'nama_kontak.required'               => 'Nama kontak darurat wajib diisi.',
+            'telepon_kontak.required'            => 'Nomor telepon kontak wajib diisi.',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+        // Generate nomor resi unik
+        do {
+            $nomorResi = 'SB-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        } while (PermintaanDarurat::where('nomor_resi', $nomorResi)->exists());
 
-            // Generate kode unik
-            $kode = 'BLD-' . date('Ymd') . '-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        // Isi field wajib
+        $validated['nomor_resi']        = $nomorResi;
+        $validated['pernyataan_setuju'] = true;
+        $validated['status']            = 'menunggu';
+        $validated['status_pemenuhan']  = 'belum_terpenuhi';
 
-            $data = $request->all();
-            $data['kode'] = $kode;
-            $data['status_pemenuhan'] = 'belum';
+        // Isi juga kolom lama agar kompatibel
+        $validated['kode']          = PermintaanDarurat::generateKode();
+        $validated['nama_pasien']   = $validated['nama_pasien'];
+        $validated['usia']          = $validated['usia_pasien'];
+        $validated['gender']        = ucfirst($validated['jenis_kelamin']);
+        $validated['jumlah']        = $validated['jumlah_kantong'];
+        $validated['deadline']      = $validated['tanggal_dibutuhkan'] . ' 00:00:00';
+        $validated['nama_rs']       = $validated['nama_rumah_sakit'];
+        $validated['alamat_rs']     = $validated['alamat_lengkap'];
+        $validated['kontak']        = $validated['telepon_kontak'];
 
-            $permintaan = PermintaanDarurat::create($data);
+        $permintaan = PermintaanDarurat::create($validated);
 
-            return response()->json([
-                'message' => 'Permintaan berhasil dibuat',
-                'data' => $permintaan
-            ], 201);
+        return response()->json([
+            'success'    => true,
+            'message'    => 'Permintaan darah darurat berhasil dikirim. Simpan nomor resi Anda.',
+            'nomor_resi' => $permintaan->nomor_resi,
+            'data'       => $permintaan,
+        ], 201);
+    }
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal menyimpan data',
-                'error' => $e->getMessage()
-            ], 500);
+    /**
+     * GET /api/permintaan-darurat/resi/{nomor_resi}
+     * Cek status permintaan berdasarkan nomor resi
+     */
+    public function cekResi($nomor_resi)
+    {
+        $data = PermintaanDarurat::where('nomor_resi', $nomor_resi)->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+    /**
+     * GET /api/permintaan-darurat
+     * (Admin) Lihat semua permintaan darurat
+     */
+    public function index(Request $request)
+    {
+        $query = PermintaanDarurat::query();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        try {
-            $data = PermintaanDarurat::findOrFail($id);
-            return response()->json($data);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Data tidak ditemukan'
-            ], 404);
+        if ($request->filled('tingkat_urgensi')) {
+            $query->where('tingkat_urgensi', $request->tingkat_urgensi);
         }
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        try {
-            $permintaan = PermintaanDarurat::findOrFail($id);
-
-            $validator = Validator::make($request->all(), [
-                'nama_pasien' => 'sometimes|string|max:255',
-                'usia' => 'sometimes|integer|min:0|max:150',
-                'gender' => 'sometimes|in:Laki-laki,Perempuan',
-                'diagnosis' => 'nullable|string',
-                'golongan_darah' => 'sometimes|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-                'jumlah' => 'sometimes|integer|min:1|max:50',
-                'deadline' => 'sometimes|date',
-                'status' => 'sometimes|in:DARURAT,NORMAL,TERENCANA',
-                'nama_rs' => 'sometimes|string|max:255',
-                'alamat_rs' => 'nullable|string',
-                'kontak' => 'sometimes|string|max:20',
-                'nama_kontak' => 'nullable|string|max:255',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $permintaan->update($request->all());
-
-            return response()->json([
-                'message' => 'Data berhasil diperbarui',
-                'data' => $permintaan
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memperbarui data',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($request->filled('golongan_darah')) {
+            $query->where('golongan_darah', $request->golongan_darah);
         }
+
+        // Darurat duluan
+        $permintaan = $query
+            ->orderByRaw("CASE WHEN tingkat_urgensi = 'darurat' THEN 0 WHEN tingkat_urgensi = 'normal' THEN 1 ELSE 2 END")
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'total'   => $permintaan->count(),
+            'data'    => $permintaan,
+        ]);
     }
 
     /**
-     * Update status pemenuhan.
+     * PUT /api/permintaan-darurat/{id}/status
+     * (Admin) Update status permintaan
      */
-    public function proses(Request $request, $id)
+    public function updateStatus(Request $request, $id)
     {
-        try {
-            $permintaan = PermintaanDarurat::findOrFail($id);
+        $validated = $request->validate([
+            'status' => 'required|in:menunggu,diproses,selesai,ditolak',
+        ]);
 
-            $validator = Validator::make($request->all(), [
-                'status_pemenuhan' => 'required|in:diproses,terpenuhi',
-                'catatan' => 'nullable|string'
-            ]);
+        $permintaan = PermintaanDarurat::findOrFail($id);
+        $permintaan->update($validated);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $permintaan->status_pemenuhan = $request->status_pemenuhan;
-            $permintaan->catatan = $request->catatan;
-            $permintaan->save();
-
-            return response()->json([
-                'message' => 'Status berhasil diperbarui',
-                'data' => $permintaan
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memperbarui status',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        try {
-            $permintaan = PermintaanDarurat::findOrFail($id);
-            $permintaan->delete();
-
-            return response()->json([
-                'message' => 'Data berhasil dihapus'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal menghapus data',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get statistics for dashboard.
-     */
-    public function getStatistics()
-    {
-        try {
-            $now = now();
-            $today = $now->format('Y-m-d');
-            
-            $statistics = [
-                'hari_ini' => PermintaanDarurat::whereDate('created_at', $today)->count(),
-                'darurat_aktif' => PermintaanDarurat::where('status', 'DARURAT')
-                    ->where('status_pemenuhan', '!=', 'terpenuhi')
-                    ->count(),
-                'rata_rata_per_hari' => $this->getAveragePerDay(),
-                'golongan_terbanyak' => $this->getMostRequestedBloodType(),
-            ];
-            
-            return response()->json($statistics);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memuat statistik',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get average requests per day (last 30 days).
-     */
-    private function getAveragePerDay()
-    {
-        $thirtyDaysAgo = now()->subDays(30);
-        $total = PermintaanDarurat::where('created_at', '>=', $thirtyDaysAgo)->count();
-        
-        return $total > 0 ? round($total / 30, 1) : 0;
-    }
-
-    /**
-     * Get most requested blood type.
-     */
-    private function getMostRequestedBloodType()
-    {
-        $data = PermintaanDarurat::select('golongan_darah')
-            ->selectRaw('COUNT(*) as total')
-            ->groupBy('golongan_darah')
-            ->orderBy('total', 'desc')
-            ->first();
-            
-        return $data ? $data->golongan_darah : '-';
+        return response()->json([
+            'success' => true,
+            'message' => 'Status permintaan berhasil diperbarui.',
+            'data'    => $permintaan,
+        ]);
     }
 }

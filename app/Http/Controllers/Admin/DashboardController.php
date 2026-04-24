@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Admin/DashboardController.php
 
 namespace App\Http\Controllers\Admin;
 
@@ -6,38 +7,66 @@ use App\Http\Controllers\Controller;
 use App\Models\StokDarah;
 use App\Models\PermintaanDarurat;
 use App\Models\Feedback;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
-    // ─── DASHBOARD ──────────────────────────────────────────────
+    // ─── DASHBOARD ──────────────────────────────────────────────────────────
     public function index()
     {
         $totalStok       = StokDarah::count();
         $totalPermintaan = PermintaanDarurat::count();
-        $permintaanBaru  = PermintaanDarurat::where('status', 'menunggu')->count();
+        $permintaanBaru  = PermintaanDarurat::whereIn('status', ['menunggu', 'pending'])->count();
         $totalFeedback   = Feedback::count();
         $feedbackBelum   = Feedback::where('status', 'belum_dibalas')->count();
+        $totalUsers      = User::where('role', 'user')->count();
 
+        // 5 permintaan terbaru
         $permintaanTerbaru = PermintaanDarurat::latest()->take(5)->get();
 
+        // 5 feedback terbaru
+        $feedbackTerbaru = Feedback::latest()->take(5)->get();
+
+        // Statistik stok per golongan darah (total dari semua RS)
+        $semuaStok = StokDarah::all();
+        $stokPerGolongan = [
+            'A+'  => $semuaStok->sum('stok_a_plus'),
+            'A-'  => $semuaStok->sum('stok_a_minus'),
+            'B+'  => $semuaStok->sum('stok_b_plus'),
+            'B-'  => $semuaStok->sum('stok_b_minus'),
+            'AB+' => $semuaStok->sum('stok_ab_plus'),
+            'AB-' => $semuaStok->sum('stok_ab_minus'),
+            'O+'  => $semuaStok->sum('stok_o_plus'),
+            'O-'  => $semuaStok->sum('stok_o_minus'),
+        ];
+        $totalStokKantong = array_sum($stokPerGolongan);
+
         return view('admin.dashboard', compact(
-            'totalStok', 'totalPermintaan', 'permintaanBaru',
-            'totalFeedback', 'feedbackBelum', 'permintaanTerbaru'
+            'totalStok',
+            'totalPermintaan',
+            'permintaanBaru',
+            'totalFeedback',
+            'feedbackBelum',
+            'totalUsers',
+            'permintaanTerbaru',
+            'feedbackTerbaru',
+            'stokPerGolongan',
+            'totalStokKantong'
         ));
     }
 
-    // ─── STOK DARAH ─────────────────────────────────────────────
+    // ─── STOK DARAH ─────────────────────────────────────────────────────────
     public function stokIndex()
     {
-        $stoks = StokDarah::withTrashed()->latest()->paginate(10);
-        return view('admin.stok.index', compact('stoks'));
+        $stoks = StokDarah::latest()->paginate(10);
+        return view('admin.stok', compact('stoks'));
     }
 
     public function stokCreate()
     {
-        return view('admin.stok.form');
+        return view('admin.stok-form');
     }
 
     public function stokStore(Request $request)
@@ -65,7 +94,7 @@ class DashboardController extends Controller
 
     public function stokEdit(StokDarah $stok)
     {
-        return view('admin.stok.form', compact('stok'));
+        return view('admin.stok-form', compact('stok'));
     }
 
     public function stokUpdate(Request $request, StokDarah $stok)
@@ -84,7 +113,9 @@ class DashboardController extends Controller
         ]);
 
         if ($request->hasFile('foto')) {
-            if ($stok->foto) Storage::disk('public')->delete($stok->foto);
+            if ($stok->foto) {
+                Storage::disk('public')->delete($stok->foto);
+            }
             $data['foto'] = $request->file('foto')->store('stok-darah', 'public');
         }
 
@@ -94,36 +125,42 @@ class DashboardController extends Controller
 
     public function stokDestroy(StokDarah $stok)
     {
-        $stok->delete(); // soft delete
+        if ($stok->foto) {
+            Storage::disk('public')->delete($stok->foto);
+        }
+        $stok->delete();
         return back()->with('success', 'Data berhasil dihapus!');
     }
 
-    // ─── PERMINTAAN DARURAT ──────────────────────────────────────
+    // ─── PERMINTAAN DARURAT ──────────────────────────────────────────────────
     public function permintaanIndex(Request $request)
     {
         $query = PermintaanDarurat::latest();
 
-        if ($request->status) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('urgensi')) {
+            $query->where('tingkat_urgensi', $request->urgensi);
+        }
+
         $permintaans = $query->paginate(15);
-        return view('admin.permintaan.index', compact('permintaans'));
+        return view('admin.darurat', compact('permintaans'));
     }
 
     public function permintaanShow(PermintaanDarurat $permintaan)
     {
-        return view('admin.permintaan.show', compact('permintaan'));
+        return view('admin.darurat-detail', compact('permintaan'));
     }
 
     public function permintaanUpdateStatus(Request $request, PermintaanDarurat $permintaan)
     {
         $request->validate([
-            'status'           => 'required|in:menunggu,diproses,selesai,ditolak',
-            'status_pemenuhan' => 'required|in:belum_terpenuhi,sebagian,terpenuhi',
+            'status' => 'required|in:menunggu,diproses,selesai,ditolak',
         ]);
 
-        $permintaan->update($request->only('status', 'status_pemenuhan'));
+        $permintaan->update(['status' => $request->status]);
         return back()->with('success', 'Status permintaan berhasil diperbarui!');
     }
 
@@ -133,11 +170,12 @@ class DashboardController extends Controller
         return back()->with('success', 'Permintaan berhasil dihapus!');
     }
 
-    // ─── FEEDBACK ────────────────────────────────────────────────
+    // ─── FEEDBACK ────────────────────────────────────────────────────────────
     public function feedbackIndex()
     {
-        $feedbacks = Feedback::latest()->paginate(15);
-        return view('admin.feedback.index', compact('feedbacks'));
+        $feedbacks  = Feedback::latest()->paginate(15);
+        $rataRating = Feedback::whereNotNull('rating')->avg('rating');
+        return view('admin.feedback', compact('feedbacks', 'rataRating'));
     }
 
     public function feedbackBalas(Request $request, Feedback $feedback)
@@ -159,5 +197,21 @@ class DashboardController extends Controller
     {
         $feedback->delete();
         return back()->with('success', 'Feedback berhasil dihapus!');
+    }
+
+    // ─── USERS ───────────────────────────────────────────────────────────────
+    public function usersIndex()
+    {
+        $users = User::where('role', 'user')->latest()->paginate(20);
+        return view('admin.users', compact('users'));
+    }
+
+    public function usersDestroy(User $user)
+    {
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Tidak bisa menghapus akun admin!');
+        }
+        $user->delete();
+        return back()->with('success', 'Pengguna berhasil dihapus!');
     }
 }

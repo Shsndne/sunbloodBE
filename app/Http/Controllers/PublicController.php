@@ -2,79 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StokDarah;
-use App\Models\PermintaanDarurat;
-use App\Models\Feedback;
 use Illuminate\Http\Request;
+use App\Models\StokDarah;
 
 class PublicController extends Controller
 {
-    // Landing page
-    public function index()
+    public function landing()
     {
-        $totalStok = StokDarah::all()->sum->total_stok;
-        return view('public.landing', compact('totalStok'));
+        $stoks = StokDarah::orderBy('nama_rs')->get();
+        $totalKantong = $stoks->sum(fn($s) => $s->total_stok);
+        return view('public.landing', compact('stoks', 'totalKantong'));
     }
 
-    // Halaman stok darah
+    public function konsultasi()
+    {
+        return view('public.konsultasi');
+    }
+
     public function stokDarah()
     {
-        $stoks = StokDarah::all();
-        return view('public.stok-darah', compact('stoks'));
+        $stoks = StokDarah::orderBy('nama_rs')->get();
+        $stokPerGolongan = [
+            'A+'  => $stoks->sum('stok_a_plus'),
+            'A-'  => $stoks->sum('stok_a_minus'),
+            'B+'  => $stoks->sum('stok_b_plus'),
+            'B-'  => $stoks->sum('stok_b_minus'),
+            'AB+' => $stoks->sum('stok_ab_plus'),
+            'AB-' => $stoks->sum('stok_ab_minus'),
+            'O+'  => $stoks->sum('stok_o_plus'),
+            'O-'  => $stoks->sum('stok_o_minus'),
+        ];
+        $totalKantong = array_sum($stokPerGolongan);
+        return view('public.stok-darah', compact('stoks', 'stokPerGolongan', 'totalKantong'));
     }
 
-    // Form permintaan darurat (GET)
-    public function formDarurat()
+    public function darurat()
     {
         return view('public.darurat');
     }
 
-    // Simpan permintaan darurat (POST)
-    public function simpanDarurat(Request $request)
+    public function feedback()
     {
-        $request->validate([
-            'nama_pasien'    => 'required|string|max:255',
-            'usia'           => 'required|integer|min:1|max:120',
-            'gender'         => 'required|in:laki-laki,perempuan',
-            'diagnosis'      => 'nullable|string|max:500',
-            'golongan_darah' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'jumlah'         => 'required|integer|min:1',
-            'deadline'       => 'nullable|date|after:now',
-            'nama_rs'        => 'required|string|max:255',
-            'alamat_rs'      => 'nullable|string|max:500',
-            'kontak'         => 'required|string|max:20',
-            'nama_kontak'    => 'required|string|max:255',
-            'catatan'        => 'nullable|string|max:1000',
-        ]);
-
-        $data               = $request->all();
-        $data['kode']       = PermintaanDarurat::generateKode();
-        $data['status']     = 'menunggu';
-
-        $permintaan = PermintaanDarurat::create($data);
-
-        return redirect()->route('darurat.sukses', ['kode' => $permintaan->kode])
-            ->with('success', 'Permintaan darah berhasil dikirim!');
-    }
-
-    // Halaman sukses setelah kirim permintaan
-    public function suksessDarurat($kode)
-    {
-        $permintaan = PermintaanDarurat::where('kode', $kode)->firstOrFail();
-        return view('public.darurat-sukses', compact('permintaan'));
-    }
-
-    // Simpan feedback (POST)
-    public function simpanFeedback(Request $request)
-    {
-        $request->validate([
-            'feedback_text' => 'required|string|min:10|max:2000',
-        ]);
-
-        Feedback::create([
-            'feedback_text' => $request->feedback_text,
-        ]);
-
-        return back()->with('success', 'Terima kasih atas masukan Anda!');
+        return view('public.feedback');
     }
 }

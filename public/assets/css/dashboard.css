@@ -1,0 +1,17 @@
+/* public/css/dashboard.css - Dashboard specific styles */
+
+/* Import semua dari config.css, ini hanya tambahan */
+
+/* Feedback list items */
+.feedback-list { display: flex; flex-direction: column; gap: 0; }
+
+/* Action buttons vertical */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 130px;
+}
+
+/* Table row stripe */
+.table tbody tr:nth-child(even) td { background: #fafafa; }

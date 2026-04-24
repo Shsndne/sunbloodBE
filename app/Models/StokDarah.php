@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StokDarah extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'stok_darah';
 
@@ -25,22 +26,24 @@ class StokDarah extends Model
     ];
 
     protected $casts = [
-        'stok_a_plus'  => 'integer',
-        'stok_a_minus' => 'integer',
-        'stok_b_plus'  => 'integer',
-        'stok_b_minus' => 'integer',
-        'stok_ab_plus' => 'integer',
-        'stok_ab_minus'=> 'integer',
-        'stok_o_plus'  => 'integer',
-        'stok_o_minus' => 'integer',
+        'stok_a_plus'   => 'integer',
+        'stok_a_minus'  => 'integer',
+        'stok_b_plus'   => 'integer',
+        'stok_b_minus'  => 'integer',
+        'stok_ab_plus'  => 'integer',
+        'stok_ab_minus' => 'integer',
+        'stok_o_plus'   => 'integer',
+        'stok_o_minus'  => 'integer',
     ];
 
-    // Total semua stok di rumah sakit ini
+    /**
+     * Hitung total semua stok di rumah sakit ini
+     */
     public function getTotalStokAttribute(): int
     {
-        return $this->stok_a_plus + $this->stok_a_minus
-            + $this->stok_b_plus + $this->stok_b_minus
-            + $this->stok_ab_plus + $this->stok_ab_minus
-            + $this->stok_o_plus + $this->stok_o_minus;
+        return $this->stok_a_plus  + $this->stok_a_minus +
+               $this->stok_b_plus  + $this->stok_b_minus +
+               $this->stok_ab_plus + $this->stok_ab_minus +
+               $this->stok_o_plus  + $this->stok_o_minus;
     }
 }

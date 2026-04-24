@@ -1,76 +1,83 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Konsultasi - SunBlood</title>
-    <link rel="stylesheet" href="/assets/css/consultation.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
-    <link rel="icon" href="/assets/imgs/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
-  </head>
-  <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konsultasi - Sunblood</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/consultation.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
     <nav class="navbar">
-      <div class="nav-content">
-        <a href="{{ route('home') }}" class="logo">SunBlood</a>
-        <div class="menu-toggle" id="menu-toggle">
-          <i class="bi bi-list" id="menu-icon"></i>
+        <div class="nav-container">
+            <a href="{{ route('home') }}" class="nav-logo"><i class="fas fa-tint"></i> Sun<span>Blood</span></a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{{ route('konsultasi') }}" class="nav-link active">Konsultasi</a></li>
+                <li><a href="{{ route('stok-darah') }}" class="nav-link">Ketersediaan Darah</a></li>
+                <li><a href="{{ route('darurat') }}" class="nav-link nav-emergency">🆘 Darurat</a></li>
+                <li><a href="{{ route('feedback.page') }}" class="nav-link">Feedback</a></li>
+            </ul>
+            <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
         </div>
-        <ul class="nav-links" id="nav-links">
-          <li><a href="{{ route('konsultasi') }}" class="active">Konsultasi</a></li>
-          <li><a href="{{ route('stok-darah') }}">Ketersediaan Darah</a></li>
-          <li><a href="{{ route('darurat') }}" class="btn">Darurat</a></li>
-        </ul>
-      </div>
     </nav>
 
-    <main>
-      <section id="consultation">
-        <aside class="sidebar">
-          <h2>Layanan Konsultasi</h2>
-          <button class="btn disease-btn" data-disease="darurat">Darurat</button>
-          <button class="btn disease-btn" data-disease="kecocokan">Cek Kecocokan Darah</button>
-          <button class="btn disease-btn" data-disease="transfusi">Info Transfusi</button>
-        </aside>
-        <div class="chat-area">
-          <div class="chat-display" id="chat-display">
-            <p class="placeholder">Pilih opsi keluhan untuk memulai konsultasi...</p>
-          </div>
-          <div class="chat-input">
-            <input type="text" id="user-input" placeholder="Ketik pesan..." />
-            <button id="send-btn" class="btn"><i class="bi bi-send"></i></button>
-          </div>
+    <main class="page-content">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-comments"></i> Konsultasi Donor Darah</h1>
+                <p>Tanyakan apa saja seputar donor darah kepada asisten kami</p>
+            </div>
+
+            <div class="chatbot-wrapper">
+                <div class="chatbot-container">
+                    <div class="chat-header">
+                        <div class="bot-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="bot-info">
+                            <strong>Asisten Sunblood</strong>
+                            <span class="bot-status"><span class="dot"></span> Online</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="message-content">
+                                Halo! Saya asisten Sunblood 👋<br>
+                                Saya siap membantu Anda dengan informasi seputar <strong>donor darah</strong>.<br><br>
+                                Anda bisa bertanya tentang:
+                                <ul>
+                                    <li>Syarat dan ketentuan donor</li>
+                                    <li>Golongan darah & kompatibilitas</li>
+                                    <li>Kondisi kesehatan yang diperbolehkan</li>
+                                    <li>Manfaat dan prosedur donor</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-replies" id="quickReplies">
+                        <button onclick="sendQuick('Apa syarat donor darah?')">Syarat donor darah</button>
+                        <button onclick="sendQuick('Golongan darah apa yang paling langka?')">Golongan langka</button>
+                        <button onclick="sendQuick('Berapa sering boleh donor darah?')">Frekuensi donor</button>
+                        <button onclick="sendQuick('Apakah donor darah menyakitkan?')">Apakah sakit?</button>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" placeholder="Ketik pertanyaan Anda..." autocomplete="off">
+                        <button id="sendBtn" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </section>
     </main>
 
-    <footer>
-      <div class="cta-container">
-        <h2 class="cta-title">Butuh Konsultasi? Kami Siap Membantu</h2>
-        <p class="cta-text">Jangan tunda masalah kesehatan. Konsultasikan keluhanmu dengan tenaga medis berpengalaman dari SunBlood.</p>
-        <div class="cta-buttons">
-          <a href="{{ route('feedback.page') }}" class="btn">Hubungi Kami</a>
-          <a href="{{ route('konsultasi') }}" class="btn-outline">Konsultasi Sekarang <i class="bi bi-arrow-right-short"></i></a>
-        </div>
-      </div>
-      <div class="footer-nav container">
-        <div class="footer-flex">
-          <div class="footer-copyright">
-            <h2 class="brand-title">SunBlood</h2>
-            <p class="brand-desc">Untuk Semarang yang Lebih Sehat.</p>
-            <p class="brand-copy">©2026 SunBlood. All Rights Reserved.</p>
-          </div>
-          <div class="footer-links">
-            <a href="{{ route('konsultasi') }}">Konsultasi</a>
-            <a href="{{ route('stok-darah') }}">Ketersediaan Darah</a>
-            <a href="{{ route('darurat') }}">Emergency Request</a>
-          </div>
-        </div>
-      </div>
-    </footer>
+    <footer class="footer"><div class="container"><p>© {{ date('Y') }} SunBlood</p></div></footer>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="/assets/js/navbar.js"></script>
-    <script src="/assets/js/consultation.js"></script>
-  </body>
+    <script src="{{ asset('assets/js/consultation.js') }}"></script>
+    <script src="{{ asset('assets/js/navbar.js') }}"></script>
+</body>
 </html>
